@@ -6,8 +6,11 @@ Credits to these repos, used for orientation and for the razer driver documentat
 * OpenRazer https://github.com/openrazer/openrazer
 
 ## Behavior
-Polling rate will be limited to 500hz when not running the processes in the process list to conserve battery. 
+Polling rate will be limited to 500hz when not running the processes in the process list to conserve battery.
+
 It will automatically switch to 4000hz as soon as an added process is running.
+
+Any polling rate changes in Razer Synapse will be overwritten but will **not** display in it's menu.
 
 ## Instructions
 - Install the application from the latest release
