@@ -1,4 +1,4 @@
-# Razer HyperPolling Dongle auto polling rate changer
+# Automatic Razer HyperPolling Dongle polling rate changer
 ## An electron tray application to automatically lower polling rate to save battery
 
 Credits to these repos, used for orientation and for the razer driver documentation:
@@ -14,3 +14,8 @@ It will automatically switch to 4000hz as soon as an added process is running.
 - Right click the tray icon to open the process list (processlist.cfg):
     - add any process name including the .exe ending (case insensitive)
     - you can add multiple processes by simply adding their name to a new line
+
+example:
+
+![image](https://github.com/philipbry/RazerAutoPollingRate/assets/81459908/bb685a83-ea01-46a1-abfc-18a2eaf41983)
+
