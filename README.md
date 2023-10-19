@@ -24,6 +24,9 @@ Any polling rate changes in Razer Synapse will be overwritten but will **not** d
 - Available polling rates are 125hz, 250hz, 500hz, 1000hz, 2000hz and 4000hz. (250hz will work even though it is not an option in Razer Synapse)
 - The lower the inactive polling rate is set to the more battery you will save. (Halving polling rate roughly halves power consuption)
 
+## Screenshots
+![9VZQkkOE8q](https://github.com/philipbry/RazerAutoPollingRate/assets/81459908/da9eec4f-9205-4761-9185-be9f68537653) ![VVv9TGXESs](https://github.com/philipbry/RazerAutoPollingRate/assets/81459908/2e34527f-5170-4c02-89ac-3763e0c3fd37) ![Code_3NmjqcuxB8](https://github.com/philipbry/RazerAutoPollingRate/assets/81459908/061c22c5-1b1e-40bf-b5b1-394bed1d51c5) ![q495QO1RAA](https://github.com/philipbry/RazerAutoPollingRate/assets/81459908/5abd2860-e874-4cd6-a574-206bfb22be34)
+
 
 ## Updates
 - v1.1.0:
