@@ -6,19 +6,25 @@ Credits to these repos, used for orientation and for the razer driver documentat
 * OpenRazer https://github.com/openrazer/openrazer
 
 ## Behavior
-Polling rate will be limited to 500hz when not running the processes in the process list to conserve battery.
+Polling rate will be limited to the inactive one when not running the processes in the process list to conserve battery.
 
-It will automatically switch to 4000hz as soon as an added process is running.
+It will automatically switch to the active one as soon as an added process is running.
 
 Any polling rate changes in Razer Synapse will be overwritten but will **not** display in it's menu.
 
 ## Instructions
 - Install the application from the latest release
+- Right click the tray icon to select the inactive and active polling rates (default is 500hz and 4000hz)
 - Right click the tray icon to open the process list (processlist.cfg):
     - add any process name including the .exe ending (case insensitive)
     - you can add multiple processes by simply adding their name to a new line
 
-example:
+## Additional Information
+- Razer Synapse does not have to be running
+- Available polling rates are 125hz, 250hz, 500hz, 1000hz, 2000hz and 4000hz. (250hz will work even though it is not an option in Razer Synapse)
+- The lower the inactive polling rate is set to the more battery you will save. (Halving polling rate roughly halves power consuption)
 
-![image](https://github.com/philipbry/RazerAutoPollingRate/assets/81459908/bb685a83-ea01-46a1-abfc-18a2eaf41983)
 
+## Updates
+- v1.1.0:
+    - Added inactive and active polling rate selectors

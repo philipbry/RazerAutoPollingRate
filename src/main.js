@@ -21,6 +21,21 @@ let autostart_enabled;
 let autolaunch;
 let context_menu;
 
+let assets_folder = 'src/assets/';
+
+let lower_rate = 500;
+let higher_rate = 4000;
+
+function handle_context_menu() {
+    context_menu.items[0].submenu.items.forEach(function(item){
+        item.enabled = parseInt(item.label) < higher_rate;
+    });
+
+    context_menu.items[1].submenu.items.forEach(function(item){
+        item.enabled = parseInt(item.label) > lower_rate;
+    });
+};
+
 app.whenReady().then(() => {
     if(!store.has('autostart'))
         store.set('autostart', true)
@@ -34,23 +49,51 @@ app.whenReady().then(() => {
 
     update_autostart();
 
+    if (store.has('lower_rate'))
+        lower_rate = store.get('lower_rate');
+
+    if (store.has('higher_rate'))
+        higher_rate = store.get('higher_rate');
+
     if (!fs.existsSync('cfg'))
         fs.mkdirSync('cfg');
 
     fs.closeSync(fs.openSync('cfg/processlist.cfg', 'a'));
 
-    const icon = nativeImage.createFromPath(path.join(app_path, 'src/assets/500.png'));
+    const icon = nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png'));
     tray = new Tray(icon);
 
     context_menu = Menu.buildFromTemplate([
+        { label: 'Inactive polling rate', type: 'submenu', 
+        submenu: [
+            { label: '125hz', type: 'radio', click: handle_inactive, checked: lower_rate == 125 },
+            { label: '250hz', type: 'radio', click: handle_inactive, checked: lower_rate == 250 },
+            { label: '500hz', type: 'radio', click: handle_inactive, checked: lower_rate == 500 },
+            { label: '1000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 1000 },
+            { label: '2000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 2000 },
+            { label: '4000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 4000 },
+        ]
+        },
+        { label: 'Active polling rate', type: 'submenu', 
+        submenu: [
+            { label: '125hz', type: 'radio', click: handle_active, checked: higher_rate == 125 },
+            { label: '250hz', type: 'radio', click: handle_active, checked: higher_rate == 250 },
+            { label: '500hz', type: 'radio', click: handle_active, checked: higher_rate == 500 },
+            { label: '1000hz', type: 'radio', click: handle_active, checked: higher_rate == 1000 },
+            { label: '2000hz', type: 'radio', click: handle_active, checked: higher_rate == 2000 },
+            { label: '4000hz', type: 'radio', click: handle_active, checked: higher_rate == 4000 },
+        ]
+        },
         { label: 'Open process list', type: 'normal', click: open_process_list },
         { label: 'Autostart', type: 'checkbox', click: handle_autostart, checked: autostart_enabled },
         { label: 'Quit', type: 'normal', click: quit }
     ]);
 
-    tray.setToolTip('Initializing');
+    tray.setToolTip('Searching for dongle');
     tray.setTitle('Razer auto polling rate');
     tray.setContextMenu(context_menu);
+
+    handle_context_menu();
 
     check_interval = setInterval(() => {
         check_polling_rate();
@@ -79,6 +122,18 @@ function update_autostart() {
 function handle_autostart(menuItem) {
     autostart_enabled = menuItem.checked;
     update_autostart();
+};
+
+function handle_inactive(menuItem) {
+    lower_rate = parseInt(menuItem.label);
+    store.set('lower_rate', lower_rate)
+    handle_context_menu();
+};
+
+function handle_active(menuItem) {
+    higher_rate = parseInt(menuItem.label);
+    store.set('higher_rate', higher_rate)
+    handle_context_menu();
 };
 
 function get_razer_report(transaction_id, command_class, command_id, data_size, argument0, argument1) {
@@ -149,6 +204,9 @@ async function get_polling_rate(dongle) {
             case 0x10:
                 polling_rate = 500;
                 break;
+            case 0x20:
+                polling_rate = 250;
+                break;
             case 0x40:
                 polling_rate = 125;
                 break;
@@ -169,8 +227,20 @@ async function set_polling_rate(dongle, polling_rate) {
             case 4000:
                 rate = 0x02;
                 break;
+            case 2000:
+                rate = 0x04;
+                break;
+            case 1000:
+                rate = 0x08;
+                break;
             case 500:
                 rate = 0x10;
+                break;
+            case 250:
+                rate = 0x20;
+                break;
+            case 125:
+                rate = 0x40;
                 break;
             default:
                 break;
@@ -216,7 +286,7 @@ async function set_polling_rate(dongle, polling_rate) {
 
         await new Promise(res => setTimeout(res, 100));
 
-        tray.setImage(nativeImage.createFromPath(path.join(app_path, 'src/assets/' + polling_rate + '.png')));
+        tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + polling_rate + (polling_rate == higher_rate ? 'a.png' : '.png'))));
         tray.setToolTip(polling_rate + 'hz');
     } catch (error) {
         console.error(error);
@@ -251,14 +321,14 @@ async function check_polling_rate(first_run) {
         const polling_rate = await get_polling_rate(dongle);
 
         if(first_run) {
-            tray.setImage(nativeImage.createFromPath(path.join(app_path, 'src/assets/' + polling_rate + '.png')));
+            tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + polling_rate + (polling_rate == higher_rate ? 'a.png' : '.png'))));
             tray.setToolTip(polling_rate + 'hz');
         }
         
-        if(!running && polling_rate != 500)
-            await set_polling_rate(dongle, 500);
-        else if (running && polling_rate != 4000)
-            await set_polling_rate(dongle, 4000);
+        if(!running && polling_rate != lower_rate)
+            await set_polling_rate(dongle, lower_rate);
+        else if (running && polling_rate != higher_rate)
+            await set_polling_rate(dongle, higher_rate);
 
     } catch (error) {
         console.error(error);
