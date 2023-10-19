@@ -61,10 +61,10 @@ app.whenReady().then(() => {
     if (store.has('higher_rate'))
         higher_rate = store.get('higher_rate');
 
-    if (!fs.existsSync('cfg'))
-        fs.mkdirSync('cfg');
+    if (!fs.existsSync(path.join(app.getPath('userData'), 'cfg')))
+        fs.mkdirSync(path.join(app.getPath('userData'), 'cfg'));
 
-    fs.closeSync(fs.openSync('cfg/processlist.cfg', 'a'));
+    fs.closeSync(fs.openSync(path.join(app.getPath('userData'), 'cfg/processlist.cfg'), 'a'));
 
     const icon = nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png'));
     tray = new Tray(icon);
@@ -116,7 +116,7 @@ function quit() {
 };
 
 function open_process_list() {
-    require('child_process').exec('start "" "' + path.join(process.cwd(), '/cfg') + '"');
+    require('child_process').exec('start "" "' + path.join(app.getPath('userData'), 'cfg') + '"');
 };
 
 function update_autostart() {
@@ -316,11 +316,12 @@ function is_running(names) {
 
 async function check_polling_rate(first_run) {
     try {
-        if (!fs.existsSync('cfg'))
-            fs.mkdirSync('cfg');
-        fs.closeSync(fs.openSync('cfg/processlist.cfg'));
+        if (!fs.existsSync(path.join(app.getPath('userData'), 'cfg')))
+            fs.mkdirSync(path.join(app.getPath('userData'), 'cfg'));
 
-        var array = fs.readFileSync('cfg/processlist.cfg').toString().split('\r\n');
+        fs.closeSync(fs.openSync(path.join(app.getPath('userData'), 'cfg/processlist.cfg'), 'a'));
+
+        var array = fs.readFileSync(path.join(app.getPath('userData'), 'cfg/processlist.cfg')).toString().split('\r\n');
 
         const running = is_running(array);
 

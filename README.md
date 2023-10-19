@@ -31,3 +31,10 @@ Any polling rate changes in Razer Synapse will be overwritten but will **not** d
 ## Updates
 - v1.1.0:
     - Added inactive and active polling rate selectors
+
+- v1.1.1:
+    - added Viper SE 8k HyperPolling support
+    - minor bugfix
+
+- v1.1.2:
+    - process list will now be persistent across updates
