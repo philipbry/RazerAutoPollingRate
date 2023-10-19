@@ -21,7 +21,7 @@ Any polling rate changes in Razer Synapse will be overwritten but will **not** d
 
 ## Additional Information
 - Razer Synapse does not have to be running
-- Available polling rates are 125hz, 250hz, 500hz, 1000hz, 2000hz and 4000hz. (250hz will work even though it is not an option in Razer Synapse)
+- Available polling rates are 125hz, 250hz, 500hz, 1000hz, 2000hz, 4000hz and 8000hz (only for the Viper Mini SE). (250hz will work even though it is not an option in Razer Synapse)
 - The lower the inactive polling rate is set to the more battery you will save. (Halving polling rate roughly halves power consuption)
 
 ## Screenshots
