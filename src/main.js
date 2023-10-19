@@ -15,11 +15,18 @@ const store = new Store();
 const AutoLaunch = require('auto-launch');
 const execSync = require('child_process').execSync
 
+const models_ = {
+    None: 0,
+    HyperPollingDongle: 1,
+    ViperSE: 2,
+}
+
 let tray;
 let check_interval;
 let autostart_enabled;
 let autolaunch;
 let context_menu;
+let current_model = models_.None;
 
 let assets_folder = 'src/assets/';
 
@@ -44,7 +51,6 @@ app.whenReady().then(() => {
 
     autolaunch = new AutoLaunch({
         name: 'Razer Auto Polling Rate',
-        path: app.getPath('exe'),
     });
 
     update_autostart();
@@ -72,6 +78,7 @@ app.whenReady().then(() => {
             { label: '1000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 1000 },
             { label: '2000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 2000 },
             { label: '4000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 4000 },
+            { label: '8000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 8000, visible: lower_rate == 8000 },
         ]
         },
         { label: 'Active polling rate', type: 'submenu', 
@@ -82,6 +89,7 @@ app.whenReady().then(() => {
             { label: '1000hz', type: 'radio', click: handle_active, checked: higher_rate == 1000 },
             { label: '2000hz', type: 'radio', click: handle_active, checked: higher_rate == 2000 },
             { label: '4000hz', type: 'radio', click: handle_active, checked: higher_rate == 4000 },
+            { label: '8000hz', type: 'radio', click: handle_active, checked: higher_rate == 8000, visible: higher_rate == 8000 },
         ]
         },
         { label: 'Open process list', type: 'normal', click: open_process_list },
@@ -153,7 +161,11 @@ function get_razer_report(transaction_id, command_class, command_id, data_size, 
 async function get_dongle() {
     const dev = new WebUSB({
         devicesFound: devices => {
-            return devices.find(device => 0x1532 && device.productId == 0x00B3)
+            devices.forEach(function(dev){
+                if (dev.vendorId == 0x1532)
+                    console.log(dev.productId + ' name: ' + dev.productName + " vendor: ", dev.vendorId);
+            });
+            return devices.find(device => device.vendorId == 0x1532 && (device.productId == 0x009F || device.productId == 0x00B3));
         }
     });
 
@@ -164,7 +176,7 @@ async function get_dongle() {
     if (device) {
         return device;
     } else {
-        throw new Error('Razer HyperPolling Dongle not found');
+        throw new Error('No compatible Razer Dongle found');
     }
 };
 
@@ -224,6 +236,9 @@ async function set_polling_rate(dongle, polling_rate) {
         rate = 0x10;
 
         switch(polling_rate) {
+            case 8000:
+                rate = current_model == models_.ViperSE ? 0x01 : 0x02;
+                break;
             case 4000:
                 rate = 0x02;
                 break;
@@ -244,7 +259,7 @@ async function set_polling_rate(dongle, polling_rate) {
                 break;
             default:
                 break;
-            }
+        }
 
         await dongle.controlTransferOut({
             requestType: 'class',
@@ -272,7 +287,7 @@ async function set_polling_rate(dongle, polling_rate) {
             request: 0x09,
             value: 0x300,
             index: 0x00
-        }, get_razer_report(0xFF, 0x00, 0x40, 0x02, 0x01, rate))
+        }, get_razer_report(current_model == models_.ViperSE ? 0x1F : 0xFF, 0x00, 0x40, 0x02, 0x01, rate))
 
         await new Promise(res => setTimeout(res, 100));
 
@@ -310,8 +325,26 @@ async function check_polling_rate(first_run) {
         const running = is_running(array);
 
         const dongle = await get_dongle();
-        await dongle.open();
+        switch (dongle.productId)
+        {
+            case 0x00B3:
+                current_model = models_.HyperPollingDongle;
+                break;
+            case 0x009F:
+                current_model = models_.ViperSE;
+                break;
+            default:
+                current_model = models_.None;
+                break;
+        }
 
+        context_menu.items[0].submenu.items[context_menu.items[0].submenu.items.length - 1].visible = current_model == models_.ViperSE;
+        context_menu.items[1].submenu.items[context_menu.items[1].submenu.items.length - 1].visible = current_model == models_.ViperSE;
+
+        if(current_model == models_.None)
+            throw new Error('No compatible Razer Dongle found');
+
+        await dongle.open();
         if (dongle.configuration === null) {
             await dongle.selectConfiguration(1)
         }

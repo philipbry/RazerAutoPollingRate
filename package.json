@@ -1,6 +1,6 @@
 {
   "name": "razerautopollingrate",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "src/main.js",
   "author": "Philip B",
   "license": "ISC",
@@ -14,17 +14,17 @@
     "auto-launch": "^5.0.6",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.1.0",
-    "n-readlines": "^1.0.1",
-    "process-exists": "^5.0.0",
     "usb": "^2.11.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.4.2",
-    "@electron-forge/maker-deb": "^6.4.2",
-    "@electron-forge/maker-rpm": "^6.4.2",
     "@electron-forge/maker-squirrel": "^6.4.2",
-    "@electron-forge/maker-zip": "^6.4.2",
-    "electron": "^22.3.27"
+    "electron": "^22.3.27",
+    "electron-forge": "^5.2.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/philipbry/RazerAutoPollingRate.git"
   },
   "keywords": [
     "razer",

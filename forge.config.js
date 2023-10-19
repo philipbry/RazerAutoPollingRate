@@ -1,24 +1,28 @@
 module.exports = {
   packagerConfig: {
-    icon: 'src/assets/battery_90.png'
+    icon: 'src/assets/app'
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
-      config: {},
-    },
+      config: {
+        options: {
+          icon: 'src/assets/app'
+        }
+      }
+    }
+  ],
+  publishers: [
     {
-      name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
-    },
-    {
-      name: '@electron-forge/maker-deb',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
-    },
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'philipbry',
+          name: 'RazerAutoPollingRate'
+        },
+        prerelease: false
+      }
+    }
   ]
 };
