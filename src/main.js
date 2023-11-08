@@ -28,6 +28,10 @@ let autolaunch;
 let context_menu;
 let current_model = models_.None;
 
+function is_8k_compatible() {
+    return current_model == models_.ViperSE || current_model == models_.HyperPollingDongle
+}
+
 let assets_folder = 'src/assets/';
 
 let lower_rate = 500;
@@ -237,7 +241,7 @@ async function set_polling_rate(dongle, polling_rate) {
 
         switch(polling_rate) {
             case 8000:
-                rate = current_model == models_.ViperSE ? 0x01 : 0x02;
+                rate = is_8k_compatible() ? 0x01 : 0x02;
                 break;
             case 4000:
                 rate = 0x02;
@@ -287,7 +291,7 @@ async function set_polling_rate(dongle, polling_rate) {
             request: 0x09,
             value: 0x300,
             index: 0x00
-        }, get_razer_report(current_model == models_.ViperSE ? 0x1F : 0xFF, 0x00, 0x40, 0x02, 0x01, rate))
+        }, get_razer_report(is_8k_compatible() ? 0x1F : 0xFF, 0x00, 0x40, 0x02, 0x01, rate))
 
         await new Promise(res => setTimeout(res, 100));
 
@@ -299,10 +303,15 @@ async function set_polling_rate(dongle, polling_rate) {
             index: 0x00
         }, 90)
 
-        await new Promise(res => setTimeout(res, 100));
-
-        tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + polling_rate + (polling_rate == higher_rate ? 'a.png' : '.png'))));
-        tray.setToolTip(polling_rate + 'hz');
+        new_polling_rate = await get_polling_rate(dongle);
+        if (new_polling_rate != polling_rate) {
+            tray.setToolTip(polling_rate == 8000 ? '8k is not supported on your device, please update drivers in synapse' : 'failed to set polling rate');
+            nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png'))
+        }
+        else{
+            tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + polling_rate + (polling_rate == higher_rate ? 'a.png' : '.png'))));
+            tray.setToolTip(polling_rate + 'hz');
+        }
     } catch (error) {
         console.error(error);
     }
@@ -339,8 +348,8 @@ async function check_polling_rate(first_run) {
                 break;
         }
 
-        context_menu.items[0].submenu.items[context_menu.items[0].submenu.items.length - 1].visible = current_model == models_.ViperSE;
-        context_menu.items[1].submenu.items[context_menu.items[1].submenu.items.length - 1].visible = current_model == models_.ViperSE;
+        context_menu.items[0].submenu.items[context_menu.items[0].submenu.items.length - 1].visible = is_8k_compatible();
+        context_menu.items[1].submenu.items[context_menu.items[1].submenu.items.length - 1].visible = is_8k_compatible();
 
         if(current_model == models_.None)
             throw new Error('No compatible Razer Dongle found');
