@@ -42,10 +42,7 @@ let check_interval;
 let autostart_enabled;
 let autolaunch;
 let context_menu;
-let current_model = {
-    model: models_.None,
-    is_8k_compatible: false,
-};
+let current_model;
 
 function is_8k_compatible() {
     return current_model.is_8k_compatible;
@@ -355,12 +352,11 @@ async function check_polling_rate(first_run) {
 
         const dongle = await get_dongle();
         current_model = dongles[dongle.productId];
+        if (current_model === undefined)
+            throw new Error('No compatible Razer Dongle found');
 
         context_menu.items[0].submenu.items[context_menu.items[0].submenu.items.length - 1].visible = is_8k_compatible();
         context_menu.items[1].submenu.items[context_menu.items[1].submenu.items.length - 1].visible = is_8k_compatible();
-
-        if(current_model.model == models_.None)
-            throw new Error('No compatible Razer Dongle found');
 
         await dongle.open();
         if (dongle.configuration === null) {
