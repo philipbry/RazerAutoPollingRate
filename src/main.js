@@ -183,21 +183,26 @@ async function get_dongle() {
         devicesFound: devices => {
             devices.forEach(function(dev){
                 if (dev.vendorId == 0x1532)
-                    console.log(dev.productId + ' name: ' + dev.productName + " vendor: ", dev.vendorId);
+                    console.log(dev.productId + ' name: ' + dev.productName);
             });
             return devices.find(device => device.vendorId == 0x1532 && (dongles[device.productId] !== undefined));
         }
     });
 
-    const device = await dev.requestDevice({
-        filters: [{}]
-    })
+    try{
+        const device = await dev.requestDevice({
+            filters: [{}]
+        })
 
-    if (device) {
-        return device;
-    } else {
-        throw new Error('No compatible Razer Dongle found');
+        if (device)
+            return device;
+
+    } catch (error) {
+        if (error.name !== 'NotFoundError')
+            throw error;
     }
+
+    throw new Error('No compatible Razer Dongle found');
 };
 
 async function get_polling_rate(dongle) {
@@ -359,9 +364,8 @@ async function check_polling_rate(first_run) {
         context_menu.items[1].submenu.items[context_menu.items[1].submenu.items.length - 1].visible = is_8k_compatible();
 
         await dongle.open();
-        if (dongle.configuration === null) {
-            await dongle.selectConfiguration(1)
-        }
+        if (dongle.configuration === null)
+            await dongle.selectConfiguration(1);
 
         await dongle.claimInterface(dongle.configuration.interfaces[0].interfaceNumber);
 
