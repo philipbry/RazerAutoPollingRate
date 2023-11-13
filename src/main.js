@@ -19,6 +19,22 @@ const models_ = {
     None: 0,
     HyperPollingDongle: 1,
     ViperSE: 2,
+    DockPro: 3,
+}
+
+const dongles = {
+    0x009F: {
+        model: models_.ViperSE,
+        is_8k_compatible: true,
+    },
+    0x00B3: {
+        model: models_.HyperPollingDongle,
+        is_8k_compatible: true,
+    },
+    0x00A4: {
+        model: models_.DockPro,
+        is_8k_compatible: true,
+    },
 }
 
 let tray;
@@ -26,10 +42,10 @@ let check_interval;
 let autostart_enabled;
 let autolaunch;
 let context_menu;
-let current_model = models_.None;
+let current_model;
 
 function is_8k_compatible() {
-    return current_model == models_.ViperSE || current_model == models_.HyperPollingDongle
+    return current_model.is_8k_compatible;
 }
 
 let assets_folder = 'src/assets/';
@@ -50,7 +66,7 @@ function handle_context_menu() {
 app.whenReady().then(() => {
     if(!store.has('autostart'))
         store.set('autostart', true)
-        
+
     autostart_enabled = store.get('autostart');
 
     autolaunch = new AutoLaunch({
@@ -74,7 +90,7 @@ app.whenReady().then(() => {
     tray = new Tray(icon);
 
     context_menu = Menu.buildFromTemplate([
-        { label: 'Inactive polling rate', type: 'submenu', 
+        { label: 'Inactive polling rate', type: 'submenu',
         submenu: [
             { label: '125hz', type: 'radio', click: handle_inactive, checked: lower_rate == 125 },
             { label: '250hz', type: 'radio', click: handle_inactive, checked: lower_rate == 250 },
@@ -85,7 +101,7 @@ app.whenReady().then(() => {
             { label: '8000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 8000, visible: lower_rate == 8000 },
         ]
         },
-        { label: 'Active polling rate', type: 'submenu', 
+        { label: 'Active polling rate', type: 'submenu',
         submenu: [
             { label: '125hz', type: 'radio', click: handle_active, checked: higher_rate == 125 },
             { label: '250hz', type: 'radio', click: handle_active, checked: higher_rate == 250 },
@@ -169,7 +185,7 @@ async function get_dongle() {
                 if (dev.vendorId == 0x1532)
                     console.log(dev.productId + ' name: ' + dev.productName + " vendor: ", dev.vendorId);
             });
-            return devices.find(device => device.vendorId == 0x1532 && (device.productId == 0x009F || device.productId == 0x00B3));
+            return devices.find(device => device.vendorId == 0x1532 && (dongles[device.productId] !== undefined));
         }
     });
 
@@ -335,24 +351,12 @@ async function check_polling_rate(first_run) {
         const running = is_running(array);
 
         const dongle = await get_dongle();
-        switch (dongle.productId)
-        {
-            case 0x00B3:
-                current_model = models_.HyperPollingDongle;
-                break;
-            case 0x009F:
-                current_model = models_.ViperSE;
-                break;
-            default:
-                current_model = models_.None;
-                break;
-        }
+        current_model = dongles[dongle.productId];
+        if (current_model === undefined)
+            throw new Error('No compatible Razer Dongle found');
 
         context_menu.items[0].submenu.items[context_menu.items[0].submenu.items.length - 1].visible = is_8k_compatible();
         context_menu.items[1].submenu.items[context_menu.items[1].submenu.items.length - 1].visible = is_8k_compatible();
-
-        if(current_model == models_.None)
-            throw new Error('No compatible Razer Dongle found');
 
         await dongle.open();
         if (dongle.configuration === null) {
@@ -367,7 +371,7 @@ async function check_polling_rate(first_run) {
             tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + polling_rate + (polling_rate == higher_rate ? 'a.png' : '.png'))));
             tray.setToolTip(polling_rate + 'hz');
         }
-        
+
         if(!running && polling_rate != lower_rate)
             await set_polling_rate(dongle, lower_rate);
         else if (running && polling_rate != higher_rate)
