@@ -19,7 +19,11 @@ const models_ = {
     None: 0,
     HyperPollingDongle: 1,
     ViperSE: 2,
+    DockPro: 3,
 }
+
+const donglePids = new Set([0x009F, 0x00B3, 0x00A4])
+const eightKhzModels = new Set([models_.HyperPollingDongle, models_.ViperSE, models_.DockPro])
 
 let tray;
 let check_interval;
@@ -29,7 +33,7 @@ let context_menu;
 let current_model = models_.None;
 
 function is_8k_compatible() {
-    return current_model == models_.ViperSE || current_model == models_.HyperPollingDongle
+    return eightKhzModels.has(current_model)
 }
 
 let assets_folder = 'src/assets/';
@@ -169,7 +173,7 @@ async function get_dongle() {
                 if (dev.vendorId == 0x1532)
                     console.log(dev.productId + ' name: ' + dev.productName + " vendor: ", dev.vendorId);
             });
-            return devices.find(device => device.vendorId == 0x1532 && (device.productId == 0x009F || device.productId == 0x00B3));
+            return devices.find(device => device.vendorId == 0x1532 && (donglePids.has(device.productId)));
         }
     });
 
@@ -342,6 +346,9 @@ async function check_polling_rate(first_run) {
                 break;
             case 0x009F:
                 current_model = models_.ViperSE;
+                break;
+            case 0x00A4:
+                current_model = models_.DockPro;
                 break;
             default:
                 current_model = models_.None;
