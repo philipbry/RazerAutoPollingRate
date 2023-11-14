@@ -29,6 +29,10 @@ Any polling rate changes in Razer Synapse will be overwritten but will **not** d
 
 
 ## Updates
+- v1.2.2:
+    - fixed some minor issues
+    - improved task tray icon and tooltip feedback
+
 - v1.2.1:
     - added Dock Pro support
 

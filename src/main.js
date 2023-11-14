@@ -43,6 +43,7 @@ let autostart_enabled;
 let autolaunch;
 let context_menu;
 let current_model;
+let set_rate = [0, false];
 
 function is_8k_compatible() {
     return current_model.is_8k_compatible;
@@ -324,15 +325,10 @@ async function set_polling_rate(dongle, polling_rate) {
             index: 0x00
         }, 90)
 
-        new_polling_rate = await get_polling_rate(dongle);
-        if (new_polling_rate != polling_rate) {
-            tray.setToolTip(polling_rate == 8000 ? '8k is not supported on your device, please update drivers in synapse' : 'failed to set polling rate');
-            nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png'))
-        }
-        else{
-            tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + polling_rate + (polling_rate == higher_rate ? 'a.png' : '.png'))));
-            tray.setToolTip(polling_rate + 'hz');
-        }
+        await new Promise(res => setTimeout(res, 100));
+
+        return await get_polling_rate(dongle);
+
     } catch (error) {
         console.error(error);
     }
@@ -369,19 +365,33 @@ async function check_polling_rate(first_run) {
 
         await dongle.claimInterface(dongle.configuration.interfaces[0].interfaceNumber);
 
-        const polling_rate = await get_polling_rate(dongle);
+        const target_rate = running ? higher_rate : lower_rate;
+        polling_rate = await get_polling_rate(dongle);
 
-        if(first_run) {
+        if (first_run) {
             tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + polling_rate + (polling_rate == higher_rate ? 'a.png' : '.png'))));
             tray.setToolTip(polling_rate + 'hz');
         }
 
-        if(!running && polling_rate != lower_rate)
-            await set_polling_rate(dongle, lower_rate);
-        else if (running && polling_rate != higher_rate)
-            await set_polling_rate(dongle, higher_rate);
+        if (target_rate != polling_rate)
+            polling_rate = await set_polling_rate(dongle, target_rate);
+
+        if (set_rate[0] != polling_rate || set_rate[1] != (polling_rate == higher_rate)) {
+            if (polling_rate != target_rate) {
+                tray.setToolTip(polling_rate == 8000 ? '8k is not supported on your device, please update drivers in synapse' : 'failed to set polling rate');
+                tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png')));
+                set_rate = [0, false];
+            } else {
+                tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + polling_rate + (polling_rate == higher_rate ? 'a.png' : '.png'))));
+                tray.setToolTip(polling_rate + 'hz');
+                set_rate = [polling_rate, polling_rate == higher_rate];
+            }
+        }
 
     } catch (error) {
+        tray.setToolTip(error.message);
+        tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png')));
+        set_rate = [0, false];
         console.error(error);
     }
 };
