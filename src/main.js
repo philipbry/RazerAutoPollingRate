@@ -1,19 +1,25 @@
-var { WebUSB } = require('usb');
-var fs = require('fs');
-const Store = require('electron-store');
+if (require('electron-squirrel-startup')) return;
+
 const {
     app,
     Tray,
     Menu,
     nativeImage,
 } = require('electron');
-if (require('electron-squirrel-startup')) app.quit();
 
+const { WebUSB } = require('usb');
+const fs = require('fs');
+const Store = require('electron-store');
 const path = require('path');
 const app_path = app.getAppPath();
 const store = new Store();
 const AutoLaunch = require('auto-launch');
-const execSync = require('child_process').execSync
+const execSync = require('child_process').execSync;
+
+function log(out, error = false) {
+    const date = new Date().toLocaleTimeString('en-US', { hour12: false, hour: "numeric", minute: "numeric" });
+    fs.appendFileSync(path.join(app.getPath('userData'), 'error.log'), "[ " + date + " ] " + (error ? "ERROR: " : "LOG: ") + out + "\n");
+}
 
 const models_ = {
     None: 0,
@@ -55,17 +61,17 @@ let lower_rate = 500;
 let higher_rate = 4000;
 
 function handle_context_menu() {
-    context_menu.items[0].submenu.items.forEach(function(item){
+    context_menu.items[0].submenu.items.forEach(function (item) {
         item.enabled = parseInt(item.label) < higher_rate;
     });
 
-    context_menu.items[1].submenu.items.forEach(function(item){
+    context_menu.items[1].submenu.items.forEach(function (item) {
         item.enabled = parseInt(item.label) > lower_rate;
     });
 };
 
 app.whenReady().then(() => {
-    if(!store.has('autostart'))
+    if (!store.has('autostart'))
         store.set('autostart', true)
 
     autostart_enabled = store.get('autostart');
@@ -87,53 +93,75 @@ app.whenReady().then(() => {
 
     fs.closeSync(fs.openSync(path.join(app.getPath('userData'), 'cfg/processlist.cfg'), 'a'));
 
-    const icon = nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png'));
-    tray = new Tray(icon);
-
     context_menu = Menu.buildFromTemplate([
-        { label: 'Inactive polling rate', type: 'submenu',
-        submenu: [
-            { label: '125hz', type: 'radio', click: handle_inactive, checked: lower_rate == 125 },
-            { label: '250hz', type: 'radio', click: handle_inactive, checked: lower_rate == 250 },
-            { label: '500hz', type: 'radio', click: handle_inactive, checked: lower_rate == 500 },
-            { label: '1000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 1000 },
-            { label: '2000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 2000 },
-            { label: '4000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 4000 },
-            { label: '8000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 8000, visible: lower_rate == 8000 },
-        ]
+        {
+            label: 'Inactive polling rate', type: 'submenu',
+            submenu: [
+                { label: '125hz', type: 'radio', click: handle_inactive, checked: lower_rate == 125 },
+                { label: '250hz', type: 'radio', click: handle_inactive, checked: lower_rate == 250 },
+                { label: '500hz', type: 'radio', click: handle_inactive, checked: lower_rate == 500 },
+                { label: '1000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 1000 },
+                { label: '2000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 2000 },
+                { label: '4000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 4000 },
+                { label: '8000hz', type: 'radio', click: handle_inactive, checked: lower_rate == 8000, visible: lower_rate == 8000 },
+            ]
         },
-        { label: 'Active polling rate', type: 'submenu',
-        submenu: [
-            { label: '125hz', type: 'radio', click: handle_active, checked: higher_rate == 125 },
-            { label: '250hz', type: 'radio', click: handle_active, checked: higher_rate == 250 },
-            { label: '500hz', type: 'radio', click: handle_active, checked: higher_rate == 500 },
-            { label: '1000hz', type: 'radio', click: handle_active, checked: higher_rate == 1000 },
-            { label: '2000hz', type: 'radio', click: handle_active, checked: higher_rate == 2000 },
-            { label: '4000hz', type: 'radio', click: handle_active, checked: higher_rate == 4000 },
-            { label: '8000hz', type: 'radio', click: handle_active, checked: higher_rate == 8000, visible: higher_rate == 8000 },
-        ]
+        {
+            label: 'Active polling rate', type: 'submenu',
+            submenu: [
+                { label: '125hz', type: 'radio', click: handle_active, checked: higher_rate == 125 },
+                { label: '250hz', type: 'radio', click: handle_active, checked: higher_rate == 250 },
+                { label: '500hz', type: 'radio', click: handle_active, checked: higher_rate == 500 },
+                { label: '1000hz', type: 'radio', click: handle_active, checked: higher_rate == 1000 },
+                { label: '2000hz', type: 'radio', click: handle_active, checked: higher_rate == 2000 },
+                { label: '4000hz', type: 'radio', click: handle_active, checked: higher_rate == 4000 },
+                { label: '8000hz', type: 'radio', click: handle_active, checked: higher_rate == 8000, visible: higher_rate == 8000 },
+            ]
         },
         { label: 'Open process list', type: 'normal', click: open_process_list },
         { label: 'Autostart', type: 'checkbox', click: handle_autostart, checked: autostart_enabled },
         { label: 'Quit', type: 'normal', click: quit }
     ]);
 
+    handle_context_menu();
+
+    const icon = nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png'));
+    tray = new Tray(icon);
+
+    tray.on("click", () => {
+        tray.popUpContextMenu();
+    });
+
     tray.setToolTip('Searching for dongle');
     tray.setTitle('Razer auto polling rate');
     tray.setContextMenu(context_menu);
 
-    handle_context_menu();
-
-    check_interval = setInterval(() => {
-        check_polling_rate();
-    }, 3000);
-
-    check_polling_rate(true);
+    run_loop();
 })
 
-function quit() {
-    clearInterval(check_interval);
-    if (process.platform !== 'darwin') app.quit();
+let has_stopped = false;
+let stop = false;
+
+async function run_loop() {
+    await check_polling_rate(true);
+
+    while (true) {
+        await new Promise(res => setTimeout(res, 3000));
+        if (stop)
+            break;
+
+        await check_polling_rate();
+    }
+
+    has_stopped = true;
+}
+
+async function quit() {
+    stop = true;
+    while (!has_stopped)
+        await new Promise(res => setTimeout(res, 500));
+    if (process.platform !== 'darwin')
+        app.quit();
 };
 
 function open_process_list() {
@@ -143,8 +171,8 @@ function open_process_list() {
 function update_autostart() {
     store.set('autostart', autostart_enabled)
     autolaunch.isEnabled().then((enabled) => {
-        if (!enabled && autostart_enabled) autolaunch.enable();
-        else if (enabled && !autostart_enabled) autolaunch.disable();
+        if (!enabled && autostart_enabled) { autolaunch.enable(); log('enabled autostart'); }
+        else if (enabled && !autostart_enabled) { autolaunch.disable(); log('disabled autostart'); }
     });
 };
 
@@ -182,7 +210,7 @@ function get_razer_report(transaction_id, command_class, command_id, data_size, 
 async function get_dongle() {
     const dev = new WebUSB({
         devicesFound: devices => {
-            devices.forEach(function(dev){
+            devices.forEach(function (dev) {
                 if (dev.vendorId == 0x1532)
                     console.log(dev.productId + ' name: ' + dev.productName);
             });
@@ -190,7 +218,7 @@ async function get_dongle() {
         }
     });
 
-    try{
+    try {
         const device = await dev.requestDevice({
             filters: [{}]
         })
@@ -226,7 +254,7 @@ async function get_polling_rate(dongle) {
             index: 0x00
         }, 90)
 
-        switch(reply.data.getInt8(9)) {
+        switch (reply.data.getInt8(9)) {
             case 0x01:
                 polling_rate = 8000;
                 break;
@@ -248,12 +276,12 @@ async function get_polling_rate(dongle) {
             case 0x40:
                 polling_rate = 125;
                 break;
-            };
+        };
 
         return polling_rate;
 
     } catch (error) {
-        console.error(error);
+        throw error;
     }
 };
 
@@ -261,7 +289,7 @@ async function set_polling_rate(dongle, polling_rate) {
     try {
         rate = 0x10;
 
-        switch(polling_rate) {
+        switch (polling_rate) {
             case 8000:
                 rate = is_8k_compatible() ? 0x01 : 0x02;
                 break;
@@ -330,7 +358,7 @@ async function set_polling_rate(dongle, polling_rate) {
         return await get_polling_rate(dongle);
 
     } catch (error) {
-        console.error(error);
+        throw error;
     }
 };
 
@@ -393,5 +421,6 @@ async function check_polling_rate(first_run) {
         tray.setImage(nativeImage.createFromPath(path.join(app_path, assets_folder + 'loading.png')));
         set_rate = [0, false];
         console.error(error);
+        log(error.toString(), true);
     }
 };
