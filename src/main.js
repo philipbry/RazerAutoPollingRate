@@ -37,6 +37,10 @@ const dongles = {
         model: models_.HyperPollingDongle,
         is_8k_compatible: true,
     },
+    0x00C3: {
+        model: models_.HyperPollingDongle,
+        is_8k_compatible: true,
+    },
     0x00A4: {
         model: models_.DockPro,
         is_8k_compatible: true,
